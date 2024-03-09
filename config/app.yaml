@@ -1,0 +1,9 @@
+mysql:
+  dsn: "root:sykj_2022@tcp(192.168.1.146:3306)/ginchat?charset=utf8mb4&parseTime=True&loc=Local"
+
+redis:
+  addr: "192.168.1.146:6379"
+  password: ""
+  DB: 0
+  poolSize: 30
+  minIdleConn: 30
