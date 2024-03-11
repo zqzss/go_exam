@@ -17,11 +17,10 @@ var upGrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
 		return true
 	},
-
 }
 
-func SendMsg(c *gin.Context){
-	ws,err := upGrader.Upgrade(c.Writer,c.Request,nil)
+func SendMsg(c *gin.Context) {
+	ws, err := upGrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -35,15 +34,17 @@ func SendMsg(c *gin.Context){
 	MsgHandler(c, ws)
 }
 
-func MsgHandler(c *gin.Context,ws *websocket.Conn){
-	for{
-		msg,err := utils.Subscribe(c,utils.PublishKey)
+func MsgHandler(c *gin.Context, ws *websocket.Conn) {
+	for {
+		msg, err := utils.Subscribe(c, utils.PublishKey)
 		if err != nil {
 			fmt.Println(" MsgHandler 发送失败", err)
 		}
 		tm := time.Now().Format("2006-01-02 15:04:05")
 		m := fmt.Sprintf("[ws][%s]:%s", tm, msg)
-		err = ws.WriteMessage(1,[]byte(m))
+		msgType,p,_ := ws.ReadMessage()
+		fmt.Printf("收到消息: ",string(p))
+		err = ws.WriteMessage(msgType, append([]byte(m),p...))
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -78,24 +79,24 @@ func CreateUser(c *gin.Context) {
 	phone := c.Query("phone")
 	data := models.FindUserByName(user.Name)
 	if data.Name != "" {
-		c.JSON(200, gin.H{"code":-1,"data":"","message": "用户名已注册！"})
+		c.JSON(200, gin.H{"code": -1, "data": "", "message": "用户名已注册！"})
 		return
 	}
 
 	data = models.FindUserByEmail(email)
 	if data.Email != "" {
-		c.JSON(200, gin.H{"code":-1,"data":"","message": "邮箱已注册！"})
+		c.JSON(200, gin.H{"code": -1, "data": "", "message": "邮箱已注册！"})
 		return
 	}
 
 	data = models.FindUserByPhone(phone)
 	if data.Phone != "" {
-		c.JSON(200, gin.H{"code":-1,"data":"","message": "手机号已注册！"})
+		c.JSON(200, gin.H{"code": -1, "data": "", "message": "手机号已注册！"})
 		return
 	}
 
 	if password != repassword {
-		c.JSON(200, gin.H{"code":-1,"data":"","message": "两次密码不一致！"})
+		c.JSON(200, gin.H{"code": -1, "data": "", "message": "两次密码不一致！"})
 		return
 	}
 	user.Email = email
@@ -104,7 +105,7 @@ func CreateUser(c *gin.Context) {
 	user.Salt = salt
 	user.Password = utils.MakePassword(password, salt)
 	models.CreateUser(user)
-	c.JSON(200, gin.H{"code":0,"data":"","message": "新增用户成功！"})
+	c.JSON(200, gin.H{"code": 0, "data": "", "message": "新增用户成功！"})
 }
 
 // DeleteUser
@@ -118,7 +119,7 @@ func DeleteUser(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Query("id"))
 	user.ID = uint(id)
 	models.DeleteUser(user)
-	c.JSON(200, gin.H{"code":0,"data":"","message": "删除用户成功"})
+	c.JSON(200, gin.H{"code": 0, "data": "", "message": "删除用户成功"})
 }
 
 // UpdateUser
@@ -143,10 +144,10 @@ func UpdateUser(c *gin.Context) {
 	_, err := govalidator.ValidateStruct(user)
 	if err != nil {
 		fmt.Println(err)
-		c.JSON(200, gin.H{"code":-1,"data":"","message": "修改参数不匹配！"})
+		c.JSON(200, gin.H{"code": -1, "data": "", "message": "修改参数不匹配！"})
 	} else {
 		models.UpdateUser(user)
-		c.JSON(200, gin.H{"code":0,"data":"","message": "修改用户成功！"})
+		c.JSON(200, gin.H{"code": 0, "data": "", "message": "修改用户成功！"})
 	}
 }
 
@@ -173,5 +174,5 @@ func FindUserByNameAndPwd(c *gin.Context) {
 	}
 	pwd := utils.MakePassword(password, user.Salt)
 	data = models.FindUserByNameAndPwd(name, pwd)
-	c.JSON(200, gin.H{"code":0,"data": data,"message": "修改用户成功！"})
+	c.JSON(200, gin.H{"code": 0, "data": data, "message": "修改用户成功！"})
 }
